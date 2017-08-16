@@ -1,0 +1,5 @@
+{
+    "pollRate": 7,
+    "influxEndpoint": "http://localhost:8086"
+}
+
