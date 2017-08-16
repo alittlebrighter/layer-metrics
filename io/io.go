@@ -80,7 +80,6 @@ func (hc *HTTPController) controlHandler(w http.ResponseWriter, r *http.Request)
 			status = http.StatusInternalServerError
 		}
 		log.Println("io: Showing documentation.")
-		w.WriteHeader(status)
 	case http.MethodPost:
 		if err := r.ParseForm(); err != nil {
 			log.Println("io: ERROR - " + err.Error())
@@ -95,9 +94,10 @@ func (hc *HTTPController) controlHandler(w http.ResponseWriter, r *http.Request)
 			break
 		}
 
+		hc.commands <- command
+
 		response := "Command " + command.String() + " received."
 		log.Println("io: " + response)
-		hc.commands <- command
 		fmt.Fprintf(w, response)
 		status = http.StatusAccepted
 	}
@@ -108,12 +108,13 @@ func (hc *HTTPController) controlHandler(w http.ResponseWriter, r *http.Request)
 func (hc *HTTPController) rate() func(http.ResponseWriter, *http.Request) {
 	pollPerSecond := fmt.Sprintf("%f/second", hc.pollRate) // precompute the string since it can't be changed mid-session
 	return func(w http.ResponseWriter, r *http.Request) {
+		status := http.StatusOK
 		if _, err := fmt.Fprintf(w, pollPerSecond); err != nil {
 			log.Println("Error writing rate response: " + err.Error())
-			w.WriteHeader(http.StatusInternalServerError)
+			status = http.StatusInternalServerError
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(status)
 	}
 }
